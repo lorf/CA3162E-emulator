@@ -140,18 +140,19 @@ void setup()
   // Setup Timer2
 
   noInterrupts();
-  // Normal mode
-  bitWrite(TCCR2A, WGM21, 0);
+  // CTC mode
   bitWrite(TCCR2A, WGM20, 0);
+  bitWrite(TCCR2A, WGM21, 1);
+#ifdef WGM22
+  bitWrite(TCCR2B, WGM22, 0);
+#endif
+
   // Disable any PWM using Timer2
   bitWrite(TCCR2A, COM2A0, 0);
   bitWrite(TCCR2A, COM2A1, 0);
 #ifdef COM2B0
   bitWrite(TCCR2A, COM2B0, 0);
   bitWrite(TCCR2A, COM2B1, 0);
-#endif
-#ifdef WGM22
-  bitWrite(TCCR2B, WGM22, 0);
 #endif
 
   // CA3162E updates 3-digit display at about 67 Hz, this gives 5 ms/digit. Set
@@ -160,9 +161,9 @@ void setup()
   bitWrite(TCCR2B, CS20, 1);
   bitWrite(TCCR2B, CS21, 1);
   bitWrite(TCCR2B, CS22, 1);
-  //OCR2A = TCNT2 + DIGIT_REFRESH_TIMER_CYCLES;
+
   TCNT2 = 0;
-  OCR2A = DIGIT_REFRESH_TIMER_CYCLES;
+  OCR2A = DIGIT_REFRESH_TIMER_CYCLES - 1;
 
   // Enable Timer2 compare interrupt A
   bitWrite(TIMSK2, OCIE2A, 1);
@@ -275,7 +276,5 @@ void output_one_digit(void)
 // Timer2 compare interrupt A
 ISR(TIMER2_COMPA_vect)
 {
-  //OCR2A = TCNT2 + DIGIT_REFRESH_TIMER_CYCLES;
-  TCNT2 = 0;
   output_one_digit();
 }
