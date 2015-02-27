@@ -52,3 +52,8 @@ Emulator requires minimum external components:
 
 To calibrate Solomon SL-30 by temperature use the same technique, but use
 measured temperature instead of voltage.
+
+## Relevant information
+* [CA3162 datasheet](http://www.intersil.com/content/dam/Intersil/documents/ca31/ca3162.pdf)
+* [CA3161 datasheet](http://www.intersil.com/content/dam/Intersil/documents/ca31/ca3161.pdf)
+* [Solomon soldering stations schematics and repair manual](http://www.remserv.ru/cgi/download/Solomon_part1.pdf) - in Russian
