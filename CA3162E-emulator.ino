@@ -92,9 +92,9 @@ static const byte bcd_outputs[] = { 5, 4, 2, 3 }; // PD5, PD4, PD2, PD3 / pins 1
 //static const double calib_add = 11.4881;
 
 // Calibration by real measured SL-30 temperature
-// See http://www.wolframalpha.com/input/?i=linear+fit+{178%2C250}%2C+{258%2C377}%2C+{310%2C460}%2C+{392%2C625}
-static const double calib_mul = 1.74434;
-static const double calib_add = -68.2649;
+// See http://www.wolframalpha.com/input/?i=fit+{153%2C216}%2C+{205%2C292}%2C+{299%2C439}%2C+{405%2C640}%2C+{460%2C750}
+static const double calib_mul = 1.74182;
+static const double calib_add = -62.81;
 
 static byte outdigits[ARRAY_SIZE(digit_drivers)] = { L_SPACE, L_SPACE, L_DASH };
 
