@@ -8,22 +8,20 @@ Differences with CA2162E:
    pins).
  * Accepts only positive voltages, i.e. works only in configurations where
    CA3162E pin 10 is connected to ground.
- * Zero/gain ajust done in software (can be done in hardware using additional
-   ADC inputs).
+ * Zero/gain ajust done in software.
  * No hold mode, no fast mode (can be easily done in software).
 
 Should work on ATmega8 and ATmega328, may be easily ported to other ATmegas. It
 uses Timer2 for BCD output.
 
-Circuit requires minimum external components:
+Emulator requires minimum external components:
 * Decoupling ATmega VCC and AREF pins to GND via 0.1uF ceramic caps is required.
-* Interfacing with transistor based digit drivers needs 470 Ohm resistors in
+* Interfacing with transistor based digit drivers needs ~ 1K resistors in
   transistor base lines.
 * It's recommended to connect RESET pin to VCC via 10K resistor.
 
 ## Calibration
 
-To calibrate this emulator
 * Connect Arduino pin 9 (PB1 of ATmega, pin 15 on DIP28) to ground. This will
   force uncalibrated value to be output on the display;
 * Connect your voltmeter to Arduino A0 pin (PC0 pin of ATmega, pin 23 on
@@ -51,3 +49,6 @@ To calibrate this emulator
         1.02812 x + 14.0734
 * Use the first floating point number as `calib_mul` and the second number as
   `calib_add` in the sketch.
+
+To calibrate Solomon SL-30 by temperature use the same technique, but use
+measured temperature instead of voltage.
