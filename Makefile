@@ -1,22 +1,31 @@
-# Makefile for Arduino IDE >= 1.5
+# Makefile for Arduino IDE >= 1.5.8
 ARDUINO		?= arduino
 PKG			?= arduino-bare
 ARCH		?= avr
 BOARD		?= atmega8o_8mhz_noxtal
+CPU			?= 
 PORT		?= /dev/ttyUSB0
 
 SRC			?= CA3162E-emulator.ino
 RESULT		?= ${BUILD_DIR}/CA3162E-emulator.cpp.hex
 
-BUILD_DIR	?= build-${PKG}-${ARCH}-${BOARD}
+ifneq (${CPU},)
+BOARD_TAG	?= ${PKG}-${ARCH}-${BOARD}-${CPU}
+BOARD_SPEC	?= ${PKG}:${ARCH}:${BOARD}:cpu=${CPU}
+else
+BOARD_TAG	?= ${PKG}-${ARCH}-${BOARD}
+BOARD_SPEC	?= ${PKG}:${ARCH}:${BOARD}
+endif
+
+BUILD_DIR	?= build-${BOARD_TAG}
 
 all: ${RESULT}
 
 upload: ${RESULT}
-	${ARDUINO} --pref build.path=${BUILD_DIR} --verbose --upload --port ${PORT} ${SRC}
+	${ARDUINO} --pref build.path=${BUILD_DIR} --board ${BOARD_SPEC} --verbose --upload --port ${PORT} ${SRC}
 
 ${BUILD_DIR}/%.cpp.hex: %.ino
-	${ARDUINO} --pref build.path=${BUILD_DIR} --verbose --verify $<
+	${ARDUINO} --pref build.path=${BUILD_DIR} --board ${BOARD_SPEC} --verbose --verify $<
 
 clean:
 	rm -rf ${BUILD_DIR}
