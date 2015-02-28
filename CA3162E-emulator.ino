@@ -8,7 +8,7 @@
 
 #define DEBUG
 #define DEMO
-#define DEMO_DELAY  200
+#define DEMO_DELAY  100
 
 #ifndef __AVR
 #error "Only for AVR arduinos"
@@ -171,8 +171,6 @@ void setup()
 
 #ifdef DEMO
   // Output scrolling "HELLO"
-  set_digits(L_SPACE, L_SPACE, L_SPACE);
-  delay(DEMO_DELAY);
   set_digits(L_SPACE, L_SPACE, L_H);
   delay(DEMO_DELAY);
   set_digits(L_SPACE, L_H, L_E);
