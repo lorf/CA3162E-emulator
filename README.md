@@ -2,17 +2,13 @@
 
 This Arduino sketch emulates Intersil CA3162/CA3162E in Solomon SL-30 soldering
 station. It's written to run on bare ATmega8 or ATmega328 MCU, but can be
-easily ported to other ATmegas.
+easily ported to other Arduinos/MCUs.
 
 Differences from CA2162E:
- * Emulator don't have differential input (but it can be done using two ADC
-   pins).
- * Accepts only positive voltages, i.e. works only in configurations where
-   CA3162E pin 10 is connected to ground.
+ * Emulator don't have differential input, accepts only positive voltage, i.e.
+   works only in configurations where CA3162E pin 10 is connected to ground.
  * Zero/gain ajust done in software.
- * No hold mode, no fast mode (can be easily done in software).
-
-It uses Timer2 for BCD output.
+ * No hold mode, no fast mode.
 
 Emulator requires minimum external components:
 * Decoupling ATmega VCC and AREF pins to GND via 0.1uF ceramic caps is required.
@@ -39,8 +35,10 @@ To calibrate the emulator by voltage:
   |     184 |           203 |
   |     307 |           329 |
   |     589 |           620 |
-* Find linear approximation for this data. For eample on http://www.wolframalpha.com/ enter
-  the data like this: [linear fit {83, 100}, {184, 203}, {307, 329}, {589, 620}](http://www.wolframalpha.com/input/?i=linear+fit+{83%2C+100}%2C+{184%2C+203}%2C+{307%2C+329}%2C+{589%2C+620}). You will get an expression like this: `1.02812 x + 14.0734`
+* Find linear approximation for this data. For eample on
+  http://www.wolframalpha.com/ enter the data like this:
+  [linear fit {83, 100}, {184, 203}, {307, 329}, {589, 620}](http://www.wolframalpha.com/input/?i=linear+fit+{83%2C+100}%2C+{184%2C+203}%2C+{307%2C+329}%2C+{589%2C+620}).
+  You will get an expression like this: `1.02812 x + 14.0734`
 * Use the multiplier from that expression as `calib_mul` and the addend as
   `calib_add` in the sketch.
 

@@ -1,18 +1,13 @@
 // Please see README.md
 
-// Uses Timer2 which interferes with PWN on pins 3 and 11 on ATmega328, and
-// with PWM on pin 11 on ATmega8 (ATmega8 has no PWM on pin 3)
-
 #include <avr/interrupt.h>
+#include <limits.h>
 #include <Arduino.h>
 
-#define DEBUG
+// Serial output in debug mode causes flickering on the display
+//#define DEBUG
 #define DEMO
 #define DEMO_DELAY  100
-
-#ifndef __AVR
-#error "Only for AVR arduinos"
-#endif
 
 #if defined(__AVR_ATmega8__)
 #define AREF_INTERNAL (2.56)
@@ -29,24 +24,7 @@
 #define OVERSAMPLE_MAX_VALUE (1UL << (ADC_RESOLUTION + OVERSAMPLE_BITS))
 
 // CA3162E updates 3-digit display at about 67 Hz, this gives 5 ms/digit.
-#define DISPLAY_REFRESH_RATE  67
-#define DISPLAY_DIGITS        3
-// If You need to change prescaler, also change timer initialization in setup()
-#define TIMER_PRESCALER       1024  // CS22 = 1, CS21 = 1, CS20 = 1
-// Calculate number of timer cycles, needed to get 5 ms between digits.
-#define DIGIT_REFRESH_TIMER_CYCLES ( (F_CPU) / TIMER_PRESCALER / DISPLAY_REFRESH_RATE / DISPLAY_DIGITS )
-
-#if defined(__AVR_ATmega8__)
-// For compatibility with ATmega328, from Tone.cpp
-#define TCCR2A TCCR2
-#define TCCR2B TCCR2
-#define COM2A1 COM21
-#define COM2A0 COM20
-#define OCR2A OCR2
-#define TIMSK2 TIMSK
-#define OCIE2A OCIE2
-#define TIMER2_COMPA_vect TIMER2_COMP_vect
-#endif
+#define DIGIT_REFRESH_TIME    5000  // In microseconds
 
 #define ARRAY_SIZE(x) (sizeof((x))/sizeof((x)[0]))
 
@@ -100,21 +78,63 @@ static byte outdigits[ARRAY_SIZE(digit_drivers)] = { L_SPACE, L_SPACE, L_DASH };
 
 static inline void set_digits(byte d2, byte d1, byte d0)
 {
-  noInterrupts();
   outdigits[2] = d2;
   outdigits[1] = d1;
   outdigits[0] = d0;
-  interrupts();
+}
+
+// Set pins according to current digit
+void output_one_digit(void)
+{
+  static byte current_digit = 0;
+  byte ii;
+
+  // All digits off
+  for (ii = 0; ii < ARRAY_SIZE(outdigits); ii++)
+    digitalWrite(digit_drivers[ii], HIGH);
+
+  // Output the digit in binary form
+  for (ii = 0; ii < ARRAY_SIZE(bcd_outputs); ii++)
+    digitalWrite(bcd_outputs[ii], ((outdigits[current_digit] >> ii) & 1) ? HIGH : LOW);
+
+  // Switch current digit on
+  digitalWrite(digit_drivers[current_digit], LOW);
+
+  current_digit++;
+  if (current_digit >= ARRAY_SIZE(outdigits))
+    current_digit = 0;
+}
+
+// Show digits for specified time
+static inline void show_digits(byte d2, byte d1, byte d0, unsigned long time_ms)
+{
+  unsigned long start_ms, elapsed_ms;
+  
+  set_digits(d2, d1, d0);
+  start_ms = millis();
+
+  while (1) {
+    elapsed_ms = millis() - start_ms;
+    if (elapsed_ms > ULONG_MAX / 2) // millis() wrapped around
+      elapsed_ms += time_ms;
+    if (elapsed_ms >= time_ms)
+      break;
+
+    output_one_digit();
+    delayMicroseconds(DIGIT_REFRESH_TIME);
+    output_one_digit();
+    delayMicroseconds(DIGIT_REFRESH_TIME);
+    output_one_digit();
+    delayMicroseconds(DIGIT_REFRESH_TIME);
+  }
 }
 
 void setup()
 {
   int ii;
 
-#ifdef DEBUG
   Serial.begin(9600);
   Serial.println("CA3162E emulator - https://github.com/lorf/CA3162E-emulator");
-#endif
 
   // Note that this is 2.56V on ATmega8 and 1.1V on ATmega328. One can also use
   // EXTERNAL reference of about 1V on ATmega8 for better resolution.
@@ -137,56 +157,17 @@ void setup()
   // Enable pullup
   digitalWrite(output_calibrated, HIGH);
 
-  // Setup Timer2
-
-  noInterrupts();
-  // CTC mode
-  bitWrite(TCCR2A, WGM20, 0);
-  bitWrite(TCCR2A, WGM21, 1);
-#ifdef WGM22
-  bitWrite(TCCR2B, WGM22, 0);
-#endif
-
-  // Disable any PWM using Timer2
-  bitWrite(TCCR2A, COM2A0, 0);
-  bitWrite(TCCR2A, COM2A1, 0);
-#ifdef COM2B0
-  bitWrite(TCCR2A, COM2B0, 0);
-  bitWrite(TCCR2A, COM2B1, 0);
-#endif
-
-  // CA3162E updates 3-digit display at about 67 Hz, this gives 5 ms/digit. Set
-  // Timer2 prescaler to 1024 and enable compare interrupt each
-  // DIGIT_REFRESH_TIMER_CYCLES to get ~ 200 Hz compare interrupt (each 5 ms).
-  bitWrite(TCCR2B, CS20, 1);
-  bitWrite(TCCR2B, CS21, 1);
-  bitWrite(TCCR2B, CS22, 1);
-
-  TCNT2 = 0;
-  OCR2A = DIGIT_REFRESH_TIMER_CYCLES - 1;
-
-  // Enable Timer2 compare interrupt A
-  bitWrite(TIMSK2, OCIE2A, 1);
-  interrupts();
-
 #ifdef DEMO
   // Output scrolling "HELLO"
-  set_digits(L_SPACE, L_SPACE, L_H);
-  delay(DEMO_DELAY);
-  set_digits(L_SPACE, L_H, L_E);
-  delay(DEMO_DELAY);
-  set_digits(L_H, L_E, L_L);
-  delay(DEMO_DELAY);
-  set_digits(L_E, L_L, L_L);
-  delay(DEMO_DELAY);
-  set_digits(L_L, L_L, 0);
-  delay(DEMO_DELAY);
-  set_digits(L_L, 0, L_SPACE);
-  delay(DEMO_DELAY);
-  set_digits(0, L_SPACE, L_SPACE);
-  delay(DEMO_DELAY);
-  set_digits(L_SPACE, L_SPACE, L_SPACE);
-  delay(DEMO_DELAY);
+  show_digits(L_SPACE, L_SPACE, L_SPACE, DEMO_DELAY);
+  show_digits(L_SPACE, L_SPACE, L_H, DEMO_DELAY);
+  show_digits(L_SPACE, L_H, L_E, DEMO_DELAY);
+  show_digits(L_H, L_E, L_L, DEMO_DELAY);
+  show_digits(L_E, L_L, L_L, DEMO_DELAY);
+  show_digits(L_L, L_L, 0, DEMO_DELAY);
+  show_digits(L_L, 0, L_SPACE, DEMO_DELAY);
+  show_digits(0, L_SPACE, L_SPACE, DEMO_DELAY);
+  show_digits(L_SPACE, L_SPACE, L_SPACE, DEMO_DELAY);
 #endif
 }
 
@@ -194,9 +175,19 @@ void loop()
 {
   static unsigned long cumul_reading = 0;
   static int num_samples = 0;
+  static unsigned long last_us = 0;
 
+  unsigned long elapsed_us;
   double readval, convval;
   int val;
+
+  elapsed_us = micros() - last_us;
+  if (elapsed_us > ULONG_MAX / 2) // micros() wrapped around
+    elapsed_us += DIGIT_REFRESH_TIME;
+  if (elapsed_us >= DIGIT_REFRESH_TIME) {
+    output_one_digit();
+    last_us += elapsed_us;
+  }
 
   cumul_reading += analogRead(analog_input);
   num_samples++;
@@ -234,7 +225,9 @@ void loop()
     }
 
 #ifdef DEBUG
-    Serial.print("adc=");
+    Serial.print("millis=");
+    Serial.print(millis());
+    Serial.print(", adc=");
     Serial.print(cumul_reading);
     Serial.print(", read=");
     Serial.print(readval);
@@ -247,32 +240,4 @@ void loop()
     cumul_reading = 0;
     num_samples = 0;
   }
-}
-
-// Executes from interrupt
-void output_one_digit(void)
-{
-  static byte current_digit = 0;
-  byte ii;
-
-  // All digits off
-  for (ii = 0; ii < ARRAY_SIZE(outdigits); ii++)
-    digitalWrite(digit_drivers[ii], HIGH);
-
-  // Output the digit in binary form
-  for (ii = 0; ii < ARRAY_SIZE(bcd_outputs); ii++)
-    digitalWrite(bcd_outputs[ii], ((outdigits[current_digit] >> ii) & 1) ? HIGH : LOW);
-
-  // Switch current digit on
-  digitalWrite(digit_drivers[current_digit], LOW);
-
-  current_digit++;
-  if (current_digit >= ARRAY_SIZE(outdigits))
-    current_digit = 0;
-}
-
-// Timer2 compare interrupt A
-ISR(TIMER2_COMPA_vect)
-{
-  output_one_digit();
 }
