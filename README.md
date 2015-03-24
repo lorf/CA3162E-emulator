@@ -1,8 +1,8 @@
 #  Emulator to replace Intersil CA3162/CA3162E using Arduino on bare ATmega
 
-This Arduino sketch emulates Intersil CA3162/CA3162E in Solomon SL-30 soldering
-station. It's written to run on bare ATmega8 or ATmega328 MCU, but can be
-easily ported to other Arduinos/MCUs.
+This Arduino sketch emulates Intersil CA3162/CA3162E (also NTE2054, ECG2054) in
+Solomon SL-30 soldering station. It's written to run on bare ATmega8 or
+ATmega328 MCU, but can be easily ported to other Arduinos/MCUs.
 
 Differences from CA2162E:
  * Emulator don't have differential input, accepts only positive voltage, i.e.
