@@ -6,8 +6,8 @@ BOARD		?= atmega8o_8mhz_noxtal
 CPU			?= 
 PORT		?= /dev/ttyUSB0
 
-SRC			?= CA3162E-emulator.ino
-RESULT		?= ${BUILD_DIR}/CA3162E-emulator.cpp.hex
+SRC			?= $(wildcard *.ino *.pde)
+RESULT		?= ${BUILD_DIR}/$(patsubst %.ino,%.cpp.hex,$(patsubst %.pde,%.cpp.hex,$(firstword $(SRC))))
 
 ifneq (${CPU},)
 BOARD_TAG	?= ${PKG}-${ARCH}-${BOARD}-${CPU}
