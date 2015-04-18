@@ -9,6 +9,8 @@ Differences from CA2162E:
    works only in configurations where CA3162E pin 10 is connected to ground.
  * Zero/gain ajust done in software.
  * No hold mode, no fast mode.
+ * ADC resolution depends on the reference voltage used. In case of ATmega8
+   internal AREF it will be 3mV (or ~3 degrees of Celsius for SL-30).
 
 Emulator requires minimum external components:
 * Decoupling ATmega VCC and AREF pins to GND via 0.1uF ceramic caps is required.
