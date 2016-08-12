@@ -219,7 +219,7 @@ void loop()
       if (d2 == 0) {
         d2 = L_SPACE;
         if (d1 == 0)
-          d1 == L_SPACE;
+          d1 = L_SPACE;
       }
       set_digits(d2, d1, d0);
     }
